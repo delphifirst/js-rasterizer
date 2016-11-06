@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+	<head>
+		<title>JS Rasterizer</title>
+		<script src="./main.js"></script>
+	</head>
+
+	<body onload="start()">
+		<h1>JS Rasterizer</h1>
+		<canvas id="raster-canvas" width="800" height="600">
+			Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+		</canvas>
+		<form>
+			<span id="label-fps">FPS: 0</span>
+			<input type="checkbox" id="checkbox-debug" onclick="toggleDebug()"/> Debug Mode
+		</form>
+	</body>
+</html>
