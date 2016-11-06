@@ -1,9 +1,46 @@
-var debug = false;
-var debugLine = false;
+var debug = true;
+var debugLine = true;
 var debugPixelSize = 20;
 var framebuffer;
 var width;
 var height;
+
+function clearFramebuffer()
+{
+	for(var i = 0; i < height; ++i)
+		for(var j = 0; j < width; ++j)
+		{
+			var pixelStartIndex = i * width * 4 + j * 4;
+			framebuffer[pixelStartIndex] = 0;
+			framebuffer[pixelStartIndex + 1] = 0;
+			framebuffer[pixelStartIndex + 2] = 0;
+		}
+}
+
+function drawPixel(x, y, r, g, b)
+{
+	var i = Math.floor(height - y - 0.5);
+	if(i >= 0 && i < height)
+	{
+		var j = Math.floor(x + 0.5);
+		if(j >= 0 && j < width)
+		{
+			var pixelStartIndex = i * width * 4 + j * 4;
+			framebuffer[pixelStartIndex] = r;
+			framebuffer[pixelStartIndex + 1] = g;
+			framebuffer[pixelStartIndex + 2] = b;
+		}
+	}
+}
+
+function testDrawPixel()
+{
+	drawPixel(0, 0, 1, 0, 0);
+	drawPixel(width - 1, height - 1, 0, 1, 0);
+	drawPixel(1.6, 1.6, 0, 0, 1);
+	drawPixel(1.4, 1.4, 1, 0, 0);
+	drawPixel(width - 1.6, height - 1.6, 1, 1, 0);
+}
 
 function drawLine(framebuffer, x1, y1, x2, y2)
 {
@@ -12,12 +49,8 @@ function drawLine(framebuffer, x1, y1, x2, y2)
 
 function drawScene(deltaTime)
 {
-	for(var i = 0; i < height; ++i)
-		for(var j = 0; j < width; ++j)
-		{
-			var pixelStartIndex = i * width * 4 + j * 4;
-			framebuffer[pixelStartIndex] = (j * 10 % 256) / 255.0;
-		}
+	clearFramebuffer();
+	testDrawPixel();
 }
 
 function render(deltaTime)
@@ -56,13 +89,6 @@ function render(deltaTime)
 				context.lineTo(i * debugPixelSize, height * debugPixelSize);
 			}
 			context.stroke();
-			context.beginPath();
-			context.strokeStyle = "rgb(255, 0, 0)";
-			context.moveTo(0, height / 2 * debugPixelSize);
-			context.lineTo(width * debugPixelSize, height / 2 * debugPixelSize);
-			context.moveTo(width / 2 * debugPixelSize, 0);
-			context.lineTo(width / 2 * debugPixelSize, height * debugPixelSize);
-			context.stroke();
 		}
 	}
 	else
@@ -82,17 +108,6 @@ function render(deltaTime)
 				data[pixelStartIndex + 3] = 255;
 			}
 		context.putImageData(imageData, 0, 0);
-		if(debugLine)
-		{
-			context.beginPath();
-			context.lineWidth = 2;
-			context.strokeStyle = "rgb(255, 0, 0)";
-			context.moveTo(0, height / 2);
-			context.lineTo(width, height / 2);
-			context.moveTo(width / 2, 0);
-			context.lineTo(width / 2, height);
-			context.stroke();
-		}
 	}
 }
 
