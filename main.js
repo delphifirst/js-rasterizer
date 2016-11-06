@@ -1,4 +1,5 @@
 var debug = false;
+var debugLine = false;
 var debugPixelSize = 20;
 var framebuffer;
 var width;
@@ -39,27 +40,30 @@ function render(deltaTime)
 				context.fillRect(j * debugPixelSize, i * debugPixelSize, debugPixelSize, debugPixelSize);
 			}
 
-		context.beginPath();
-		context.lineWidth = 2;
-		context.strokeStyle = "rgb(0, 128, 255)";
-		for(var i = 0; i <= height; ++i)
+		if(debugLine)
 		{
-			context.moveTo(0, i * debugPixelSize);
-			context.lineTo(width * debugPixelSize, i * debugPixelSize);
+			context.beginPath();
+			context.lineWidth = 2;
+			context.strokeStyle = "rgb(0, 128, 255)";
+			for(var i = 0; i <= height; ++i)
+			{
+				context.moveTo(0, i * debugPixelSize);
+				context.lineTo(width * debugPixelSize, i * debugPixelSize);
+			}
+			for(var i = 0; i <= width; ++i)
+			{
+				context.moveTo(i * debugPixelSize, 0);
+				context.lineTo(i * debugPixelSize, height * debugPixelSize);
+			}
+			context.stroke();
+			context.beginPath();
+			context.strokeStyle = "rgb(255, 0, 0)";
+			context.moveTo(0, height / 2 * debugPixelSize);
+			context.lineTo(width * debugPixelSize, height / 2 * debugPixelSize);
+			context.moveTo(width / 2 * debugPixelSize, 0);
+			context.lineTo(width / 2 * debugPixelSize, height * debugPixelSize);
+			context.stroke();
 		}
-		for(var i = 0; i <= width; ++i)
-		{
-			context.moveTo(i * debugPixelSize, 0);
-			context.lineTo(i * debugPixelSize, height * debugPixelSize);
-		}
-		context.stroke();
-		context.beginPath();
-		context.strokeStyle = "rgb(255, 0, 0)";
-		context.moveTo(0, height / 2 * debugPixelSize);
-		context.lineTo(width * debugPixelSize, height / 2 * debugPixelSize);
-		context.moveTo(width / 2 * debugPixelSize, 0);
-		context.lineTo(width / 2 * debugPixelSize, height * debugPixelSize);
-		context.stroke();
 	}
 	else
 	{
@@ -78,6 +82,17 @@ function render(deltaTime)
 				data[pixelStartIndex + 3] = 255;
 			}
 		context.putImageData(imageData, 0, 0);
+		if(debugLine)
+		{
+			context.beginPath();
+			context.lineWidth = 2;
+			context.strokeStyle = "rgb(255, 0, 0)";
+			context.moveTo(0, height / 2);
+			context.lineTo(width, height / 2);
+			context.moveTo(width / 2, 0);
+			context.lineTo(width / 2, height);
+			context.stroke();
+		}
 	}
 }
 
@@ -106,6 +121,8 @@ function init()
 	initFramebuffer();
 	var checkboxDebug = document.getElementById("checkbox-debug");
 	checkboxDebug.checked = debug;
+	var checkboxDebugLine = document.getElementById("checkbox-debug-line");
+	checkboxDebugLine.checked = debugLine;
 	var lastUpdateTime = (new Date).getTime();
 	var lastUpdateFpsTime = lastUpdateTime;
 	var frameCount = 0;
@@ -136,6 +153,12 @@ function toggleDebug()
 	context.fillStyle = "rgb(255,255,255)";
 	context.fillRect(0, 0, canvasWidth, canvasHeight);
 	initFramebuffer();
+}
+
+function toggleDebugLine()
+{
+	var checkboxDebugLine = document.getElementById("checkbox-debug-line");
+	debugLine = checkboxDebugLine.checked;
 }
 
 function start()
