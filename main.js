@@ -5,6 +5,8 @@ var framebuffer;
 var width;
 var height;
 
+var totalTime = 0;
+
 function clearFramebuffer()
 {
 	for(var i = 0; i < height; ++i)
@@ -42,15 +44,75 @@ function testDrawPixel()
 	drawPixel(width - 1.6, height - 1.6, 1, 1, 0);
 }
 
-function drawLine(framebuffer, x1, y1, x2, y2)
+function drawLine(x0, y0, x1, y1, r, g, b)
 {
+	var i0 = Math.floor(height - y0 - 0.5);
+	var i1 = Math.floor(height - y1 - 0.5);
+	var j0 = Math.floor(x0 + 0.5);
+	var j1 = Math.floor(x1 + 0.5);
 
+	function swapPoint()
+	{
+		var temp = j0;
+		j0 = j1;
+		j1 = temp;
+		temp = i0;
+		i0 = i1;
+		i1 = temp;
+	}
+
+	if(i0 === i1 && j0 === j1)
+		drawPixel(x0, y0, r, g, b);
+	else
+	{
+		if(Math.abs(j1 - j0) >= Math.abs(i1 - i0))
+		{
+			if(j0 > j1)
+				swapPoint();
+			var delta = (i1 - i0) / (j1 - j0);
+			for(var i = i0, j = j0; j <= j1; i += delta, ++j)
+			{
+				if(i >= 0 && i < height && j >= 0 && j < width)
+				{
+					var pixelStartIndex = Math.round(i) * width * 4 + j * 4;
+					framebuffer[pixelStartIndex] = r;
+					framebuffer[pixelStartIndex + 1] = g;
+					framebuffer[pixelStartIndex + 2] = b;
+				}
+			}
+		}
+		else
+		{
+			if(i0 > i1)
+				swapPoint();
+			var delta = (j1 - j0) / (i1 - i0);
+			for(var i = i0, j = j0; i <= i1; ++i, j += delta)
+			{
+				if(i >= 0 && i < height && j >= 0 && j < width)
+				{
+					var pixelStartIndex = i * width * 4 + Math.round(j) * 4;
+					framebuffer[pixelStartIndex] = r;
+					framebuffer[pixelStartIndex + 1] = g;
+					framebuffer[pixelStartIndex + 2] = b;
+				}
+			}
+		}
+	}
+}
+
+function testDrawLine()
+{
+	drawLine(10, 10, 20, 15, 1, 0, 0);
+	drawLine(-2, 20, 11, 13, 0, 1, 0);
+	drawLine(20, 15, 20 + 10 * Math.cos(totalTime), 15 + 10 * Math.sin(totalTime),
+		Math.abs(Math.sin(totalTime)), 1, Math.abs(Math.sin(0.5 + 2.5 * totalTime)));
 }
 
 function drawScene(deltaTime)
 {
 	clearFramebuffer();
 	testDrawPixel();
+	testDrawLine();
 }
 
 function render(deltaTime)
@@ -143,7 +205,7 @@ function init()
 	var frameCount = 0;
 	setInterval(function(){
 		var currentTime = (new Date).getTime();
-		var deltaTime = currentTime - lastUpdateTime;
+		var deltaTime = (currentTime - lastUpdateTime) / 1000;
 		lastUpdateTime = currentTime;
 		if(currentTime - lastUpdateFpsTime > 1000)
 		{
@@ -152,6 +214,7 @@ function init()
 			lastUpdateFpsTime = currentTime;
 			frameCount = 0;
 		}
+		totalTime += deltaTime;
 		render(deltaTime);
 		++frameCount;
 	}, 1000 / 60);
