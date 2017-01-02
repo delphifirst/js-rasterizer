@@ -21,12 +21,52 @@ mat4.fromRows = function(v1, v2, v3, v4)
 	return mat4.transposed(mat4.fromCols(v1, v2, v3, v4));
 }
 
+mat4.fromScale = function(scale)
+{
+	return [scale, 0, 0, 0,
+			0, scale, 0, 0,
+			0, 0, scale, 0,
+			0, 0, 0, 1];
+}
+
 mat4.fromTranslation = function(v)
 {
 	return [1, 0, 0, v[0],
 			0, 1, 0, v[1],
 			0, 0, 1, v[2],
 			0, 0, 0, 1];
+}
+
+mat4.fromRotationX = function(angle)
+{
+	return [1, 0, 0, 0,
+			0, Math.cos(angle), -Math.sin(angle), 0,
+			0, Math.sin(angle), Math.cos(angle), 0,
+			0, 0, 0, 1];
+}
+
+mat4.fromRotationY = function(angle)
+{
+	return [Math.cos(angle), 0, Math.sin(angle), 0,
+			0, 1, 0, 0,
+			-Math.sin(angle), 0, Math.cos(angle), 0,
+			0, 0, 0, 1];
+}
+
+mat4.fromRotationZ = function(angle)
+{
+	return [Math.cos(angle), -Math.sin(angle), 0, 0,
+			Math.sin(angle), Math.cos(angle), 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1];
+}
+
+mat4.lookAt = function(eye, center, up)
+{
+	var w = vec4.neg(vec4.normalized(vec4.sub(center, eye)));
+	var u = vec4.normalized(vec4.cross(up, w));
+	var v = vec4.cross(w, u);
+	return mat4.invert(mat4.fromCols(u, v, w, eye));
 }
 
 mat4.identity = function()

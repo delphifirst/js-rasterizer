@@ -9,7 +9,9 @@ var totalTime = 0;
 
 var renderState = {
 	vertexShader: undefined,
-	viewportMatrix: undefined,
+	viewportMatrix: mat4.identity(),
+	viewMatrix: mat4.identity(),
+	worldMatrix: mat4.identity(),
 };
 
 function clearFramebuffer()
@@ -115,7 +117,11 @@ function drawScene(deltaTime)
 	clearFramebuffer();
 	renderState.vertexShader = vertexShader;
 	renderState.viewportMatrix = mat4.viewport(width, height);
-	vertexBuffer = [0, 0, 0, 0.5, 0.5, 0, 0, 0.5, 0];
+	var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
+	var scaleMatrix = mat4.fromScale(0.5);
+	renderState.worldMatrix = mat4.mul(rotationMatrix, scaleMatrix);
+	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(2, 1, 2, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
+	vertexBuffer = modelCube;
 	draw(vertexBuffer);
 }
 
