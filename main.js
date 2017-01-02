@@ -1,4 +1,4 @@
-var debug = true;
+var debug = false;
 var debugLine = true;
 var debugPixelSize = 20;
 var framebuffer;
@@ -10,6 +10,7 @@ var totalTime = 0;
 var renderState = {
 	vertexShader: undefined,
 	viewportMatrix: mat4.identity(),
+	projectionMatrix: mat4.identity(),
 	viewMatrix: mat4.identity(),
 	worldMatrix: mat4.identity(),
 };
@@ -104,8 +105,11 @@ function draw(vertexBuffer)
 	for(var i = 0; i < transformedVertexBuffer.length; i += 3)
 	{
 		var v1 = transformedVertexBuffer.slice(i * 4, i * 4 + 4);
+		v1 = vec4.scale(1 / v1[3], v1);
 		var v2 = transformedVertexBuffer.slice((i + 1) * 4, (i + 1) * 4 + 4);
+		v2 = vec4.scale(1 / v2[3], v2);
 		var v3 = transformedVertexBuffer.slice((i + 2) * 4, (i + 2) * 4 + 4);
+		v3 = vec4.scale(1 / v3[3], v3);
 		drawLine(v1[0], v1[1], v2[0], v2[1], 0, 1, 0);
 		drawLine(v2[0], v2[1], v3[0], v3[1], 0, 1, 0);
 		drawLine(v3[0], v3[1], v1[0], v1[1], 0, 1, 0);
@@ -118,9 +122,9 @@ function drawScene(deltaTime)
 	renderState.vertexShader = vertexShader;
 	renderState.viewportMatrix = mat4.viewport(width, height);
 	var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
-	var scaleMatrix = mat4.fromScale(0.5);
-	renderState.worldMatrix = mat4.mul(rotationMatrix, scaleMatrix);
-	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(2, 1, 2, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
+	renderState.worldMatrix = rotationMatrix;
+	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(3, 2, 3, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
+	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);
 	vertexBuffer = modelCube;
 	draw(vertexBuffer);
 }

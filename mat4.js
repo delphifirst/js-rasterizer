@@ -85,6 +85,15 @@ mat4.viewport = function(nx, ny)
 			0, 0, 0, 1];
 }
 
+mat4.perspective = function(fovy, aspect, near, far)
+{
+	var f = 1.0 / Math.tan(fovy / 2), nf = 1 / (near - far);
+	return [f / aspect, 0, 0, 0,
+			0, f, 0, 0,
+			0, 0, (far + near) * nf, (2 * far * near) * nf,
+			0, 0, -1, 0];
+}
+
 mat4.str = function(m)
 {
 	var result = "mat4(\n";
