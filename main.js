@@ -7,6 +7,11 @@ var height;
 
 var totalTime = 0;
 
+var renderState = {
+	vertexShader: undefined,
+	viewportMatrix: undefined,
+};
+
 function clearFramebuffer()
 {
 	for(var i = 0; i < height; ++i)
@@ -33,15 +38,6 @@ function drawPixel(x, y, r, g, b)
 			framebuffer[pixelStartIndex + 2] = b;
 		}
 	}
-}
-
-function testDrawPixel()
-{
-	drawPixel(0, 0, 1, 0, 0);
-	drawPixel(width - 1, height - 1, 0, 1, 0);
-	drawPixel(1.6, 1.6, 0, 0, 1);
-	drawPixel(1.4, 1.4, 1, 0, 0);
-	drawPixel(width - 1.6, height - 1.6, 1, 1, 0);
 }
 
 function drawLine(x0, y0, x1, y1, r, g, b)
@@ -100,19 +96,27 @@ function drawLine(x0, y0, x1, y1, r, g, b)
 	}
 }
 
-function testDrawLine()
+function draw(vertexBuffer)
 {
-	drawLine(10, 10, 20, 15, 1, 0, 0);
-	drawLine(-2, 20, 11, 13, 0, 1, 0);
-	drawLine(20, 15, 20 + 10 * Math.cos(totalTime), 15 + 10 * Math.sin(totalTime),
-		Math.abs(Math.sin(totalTime)), 1, Math.abs(Math.sin(0.5 + 2.5 * totalTime)));
+	transformedVertexBuffer = renderState.vertexShader(renderState, vertexBuffer);
+	for(var i = 0; i < transformedVertexBuffer.length; i += 3)
+	{
+		var v1 = transformedVertexBuffer.slice(i * 4, i * 4 + 4);
+		var v2 = transformedVertexBuffer.slice((i + 1) * 4, (i + 1) * 4 + 4);
+		var v3 = transformedVertexBuffer.slice((i + 2) * 4, (i + 2) * 4 + 4);
+		drawLine(v1[0], v1[1], v2[0], v2[1], 0, 1, 0);
+		drawLine(v2[0], v2[1], v3[0], v3[1], 0, 1, 0);
+		drawLine(v3[0], v3[1], v1[0], v1[1], 0, 1, 0);
+	}
 }
 
 function drawScene(deltaTime)
 {
 	clearFramebuffer();
-	testDrawPixel();
-	testDrawLine();
+	renderState.vertexShader = vertexShader;
+	renderState.viewportMatrix = mat4.viewport(width, height);
+	vertexBuffer = [0, 0, 0, 0.5, 0.5, 0, 0, 0.5, 0];
+	draw(vertexBuffer);
 }
 
 function render(deltaTime)
