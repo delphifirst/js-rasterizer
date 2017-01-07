@@ -11,6 +11,7 @@ var renderState = {
 	depthbuffer: undefined,
 	vertexShader: undefined,
 	pixelShader: undefined,
+	textureData: undefined,
 	viewportMatrix: mat4.identity(),
 	projectionMatrix: mat4.identity(),
 	viewMatrix: mat4.identity(),
@@ -157,9 +158,11 @@ function drawScene(deltaTime)
 	renderState.vertexShader = vertexShader;
 	renderState.pixelShader = pixelShader;
 	renderState.viewportMatrix = mat4.viewport(width, height, 0, 1);
-	var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
-	renderState.worldMatrix = rotationMatrix;
-	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(3, 2, 3, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
+	var rotationMatrixX = mat4.fromRotationX(0.2 * totalTime);
+	var rotationMatrixY = mat4.fromRotationY(0.3 * totalTime);
+	var rotationMatrixZ = mat4.fromRotationZ(0.1 * totalTime);
+	renderState.worldMatrix = mat4.mul(rotationMatrixX, mat4.mul(rotationMatrixY, rotationMatrixZ));
+	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(2, 1.5, 2, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
 	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);
 	draw(modelCube.format, modelCube.vertices);
 }
@@ -245,9 +248,19 @@ function initFramebufferDepthbuffer()
 		renderState.depthbuffer[i] = 0;
 }
 
+function initTexture()
+{
+	var img = document.getElementById("texture");
+	var canvas = document.getElementById("texture-canvas");
+	var context = canvas.getContext("2d");
+	context.drawImage(img, 0, 0);
+	renderState.textureData = context.getImageData(0, 0, canvas.attributes.width.value, canvas.attributes.height.value);
+}
+
 function init()
 {
 	initFramebufferDepthbuffer();
+	initTexture();
 	var checkboxDebug = document.getElementById("checkbox-debug");
 	checkboxDebug.checked = debug;
 	var checkboxDebugLine = document.getElementById("checkbox-debug-line");
