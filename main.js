@@ -9,6 +9,7 @@ var totalTime = 0;
 
 var renderState = {
 	vertexShader: undefined,
+	pixelShader: undefined,
 	viewportMatrix: mat4.identity(),
 	projectionMatrix: mat4.identity(),
 	viewMatrix: mat4.identity(),
@@ -99,20 +100,92 @@ function drawLine(x0, y0, x1, y1, r, g, b)
 	}
 }
 
-function draw(vertexBuffer)
+function drawTriangle(vertex1, vertex2, vertex3)
 {
-	transformedVertexBuffer = renderState.vertexShader(renderState, vertexBuffer);
-	for(var i = 0; i < transformedVertexBuffer.length; i += 3)
+	var minX = Math.min(vertex1[0][0], vertex2[0][0], vertex3[0][0]);
+	var maxX = Math.max(vertex1[0][0], vertex2[0][0], vertex3[0][0]);
+	var minY = Math.min(vertex1[0][1], vertex2[0][1], vertex3[0][1]);
+	var maxY = Math.max(vertex1[0][1], vertex2[0][1], vertex3[0][1]);
+
+	function f12(x, y)
 	{
-		var v1 = transformedVertexBuffer.slice(i * 4, i * 4 + 4);
-		v1 = vec4.scale(1 / v1[3], v1);
-		var v2 = transformedVertexBuffer.slice((i + 1) * 4, (i + 1) * 4 + 4);
-		v2 = vec4.scale(1 / v2[3], v2);
-		var v3 = transformedVertexBuffer.slice((i + 2) * 4, (i + 2) * 4 + 4);
-		v3 = vec4.scale(1 / v3[3], v3);
-		drawLine(v1[0], v1[1], v2[0], v2[1], 0, 1, 0);
-		drawLine(v2[0], v2[1], v3[0], v3[1], 0, 1, 0);
-		drawLine(v3[0], v3[1], v1[0], v1[1], 0, 1, 0);
+		return (vertex1[0][1] - vertex2[0][1]) * x
+			+ (vertex2[0][0] - vertex1[0][0]) * y
+			+ vertex1[0][0] * vertex2[0][1] - vertex2[0][0] * vertex1[0][1];
+	}
+
+	function f23(x, y)
+	{
+		return (vertex2[0][1] - vertex3[0][1]) * x
+			+ (vertex3[0][0] - vertex2[0][0]) * y
+			+ vertex2[0][0] * vertex3[0][1] - vertex3[0][0] * vertex2[0][1];
+	}
+
+	function f31(x, y)
+	{
+		return (vertex3[0][1] - vertex1[0][1]) * x
+			+ (vertex1[0][0] - vertex3[0][0]) * y
+			+ vertex3[0][0] * vertex1[0][1] - vertex1[0][0] * vertex3[0][1];
+	}
+
+	for(var y = Math.floor(minY); y <= Math.ceil(maxY); ++y)
+		for(var x = Math.floor(minX); x <= Math.ceil(maxX); ++x)
+		{
+			var alpha = f23(x, y) / f23(vertex1[0][0], vertex1[0][1]);
+			var beta = f31(x, y) / f31(vertex2[0][0], vertex2[0][1]);
+			var gamma = f12(x, y) / f12(vertex3[0][0], vertex3[0][1]);
+
+			if(alpha > 0 && beta > 0 && gamma > 0)
+			{
+				var varyings = new Array(vertex1.length);
+				for(var varyingIndex = 0; varyingIndex < varyings.length; ++varyingIndex)
+				{
+					varyings[varyingIndex] = vec4.add(
+						vec4.scale(alpha, vertex1[varyingIndex]),
+						vec4.add(vec4.scale(beta, vertex2[varyingIndex]),
+							vec4.scale(gamma, vertex3[varyingIndex]))
+						);
+				}
+				console.log(varyings);
+				var color = renderState.pixelShader(varyings);
+				drawPixel(x, y, color[0], color[1], color[2]);
+			}
+		}
+}
+
+function draw(format, vertexBuffer)
+{
+	var vertexSize = format.reduce(function(previousValue, currentValue){return previousValue + currentValue;});
+	var vertexCount = vertexBuffer.length / vertexSize;
+	var processedVertexBuffer = new Array(vertexCount);
+	for(var vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+	{
+		// Process vertex one by one
+		var attributes = new Array(format.length);
+		for(var attributeIndex = 0, bufferIndex = 0; attributeIndex < attributes.length; ++attributeIndex)
+		{
+			var attribute = vec4.create();
+			for(var i = 0; i < format[attributeIndex]; ++i)
+			{
+				attribute[i] = vertexBuffer[vertexIndex * vertexSize + bufferIndex];
+				++bufferIndex;
+			}
+			attributes[attributeIndex] = attribute;
+		}
+		processedVertexBuffer[vertexIndex] = renderState.vertexShader(attributes);
+	}
+
+	var triangleCount = vertexCount / 3;
+
+	for(var triangleIndex = 0; triangleIndex < triangleCount; ++triangleIndex)
+	{
+		var v1 = processedVertexBuffer[3 * triangleIndex];
+		var v2 = processedVertexBuffer[3 * triangleIndex + 1];
+		var v3 = processedVertexBuffer[3 * triangleIndex + 2];
+		v1[0] = vec4.scale(1 / v1[0][3], v1[0]);
+		v2[0] = vec4.scale(1 / v2[0][3], v2[0]);
+		v3[0] = vec4.scale(1 / v3[0][3], v3[0]);
+		drawTriangle(v1, v2, v3);
 	}
 }
 
@@ -120,13 +193,13 @@ function drawScene(deltaTime)
 {
 	clearFramebuffer();
 	renderState.vertexShader = vertexShader;
-	renderState.viewportMatrix = mat4.viewport(width, height);
-	var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
+	renderState.pixelShader = pixelShader;
+	renderState.viewportMatrix = mat4.viewport(width, height, 0, 1);
+	/*var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
 	renderState.worldMatrix = rotationMatrix;
 	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(3, 2, 3, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
-	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);
-	vertexBuffer = modelCube;
-	draw(vertexBuffer);
+	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);*/
+	draw(modelTriangle.format, modelTriangle.vertices);
 }
 
 function render(deltaTime)

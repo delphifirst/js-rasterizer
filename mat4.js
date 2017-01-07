@@ -77,11 +77,11 @@ mat4.identity = function()
 			0, 0, 0, 1];
 }
 
-mat4.viewport = function(nx, ny)
+mat4.viewport = function(nx, ny, near, far)
 {
 	return [nx / 2, 0, 0, (nx - 1) / 2,
 			0, ny / 2, 0, (ny - 1) / 2,
-			0, 0, 1, 0,
+			0, 0, (far - near) / 2, (far + near) / 2,
 			0, 0, 0, 1];
 }
 
