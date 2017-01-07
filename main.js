@@ -1,13 +1,14 @@
 var debug = false;
 var debugLine = true;
 var debugPixelSize = 20;
-var framebuffer;
 var width;
 var height;
 
 var totalTime = 0;
 
 var renderState = {
+	framebuffer: undefined,
+	depthbuffer: undefined,
 	vertexShader: undefined,
 	pixelShader: undefined,
 	viewportMatrix: mat4.identity(),
@@ -22,13 +23,23 @@ function clearFramebuffer()
 		for(var j = 0; j < width; ++j)
 		{
 			var pixelStartIndex = i * width * 4 + j * 4;
-			framebuffer[pixelStartIndex] = 0;
-			framebuffer[pixelStartIndex + 1] = 0;
-			framebuffer[pixelStartIndex + 2] = 0;
+			renderState.framebuffer[pixelStartIndex] = 0;
+			renderState.framebuffer[pixelStartIndex + 1] = 0;
+			renderState.framebuffer[pixelStartIndex + 2] = 0;
 		}
 }
 
-function drawPixel(x, y, r, g, b)
+function clearDepthbuffer()
+{
+	for(var i = 0; i < height; ++i)
+		for(var j = 0; j < width; ++j)
+		{
+			var pixelIndex = i * width + j;
+			renderState.depthbuffer[pixelIndex] = 1;
+		}
+}
+
+function drawPixel(x, y, z, r, g, b)
 {
 	var i = Math.floor(height - y - 0.5);
 	if(i >= 0 && i < height)
@@ -36,65 +47,15 @@ function drawPixel(x, y, r, g, b)
 		var j = Math.floor(x + 0.5);
 		if(j >= 0 && j < width)
 		{
-			var pixelStartIndex = i * width * 4 + j * 4;
-			framebuffer[pixelStartIndex] = r;
-			framebuffer[pixelStartIndex + 1] = g;
-			framebuffer[pixelStartIndex + 2] = b;
-		}
-	}
-}
-
-function drawLine(x0, y0, x1, y1, r, g, b)
-{
-	var i0 = Math.floor(height - y0 - 0.5);
-	var i1 = Math.floor(height - y1 - 0.5);
-	var j0 = Math.floor(x0 + 0.5);
-	var j1 = Math.floor(x1 + 0.5);
-
-	function swapPoint()
-	{
-		var temp = j0;
-		j0 = j1;
-		j1 = temp;
-		temp = i0;
-		i0 = i1;
-		i1 = temp;
-	}
-
-	if(i0 === i1 && j0 === j1)
-		drawPixel(x0, y0, r, g, b);
-	else
-	{
-		if(Math.abs(j1 - j0) >= Math.abs(i1 - i0))
-		{
-			if(j0 > j1)
-				swapPoint();
-			var delta = (i1 - i0) / (j1 - j0);
-			for(var i = i0, j = j0; j <= j1; i += delta, ++j)
+			var depthPixelIndex = i * width + j;
+			if(z < renderState.depthbuffer[depthPixelIndex])
 			{
-				if(i >= 0 && i < height && j >= 0 && j < width)
-				{
-					var pixelStartIndex = Math.round(i) * width * 4 + j * 4;
-					framebuffer[pixelStartIndex] = r;
-					framebuffer[pixelStartIndex + 1] = g;
-					framebuffer[pixelStartIndex + 2] = b;
-				}
-			}
-		}
-		else
-		{
-			if(i0 > i1)
-				swapPoint();
-			var delta = (j1 - j0) / (i1 - i0);
-			for(var i = i0, j = j0; i <= i1; ++i, j += delta)
-			{
-				if(i >= 0 && i < height && j >= 0 && j < width)
-				{
-					var pixelStartIndex = i * width * 4 + Math.round(j) * 4;
-					framebuffer[pixelStartIndex] = r;
-					framebuffer[pixelStartIndex + 1] = g;
-					framebuffer[pixelStartIndex + 2] = b;
-				}
+				// Pass depth test
+				renderState.depthbuffer[depthPixelIndex] = z;
+				var pixelStartIndex = i * width * 4 + j * 4;
+				renderState.framebuffer[pixelStartIndex] = r;
+				renderState.framebuffer[pixelStartIndex + 1] = g;
+				renderState.framebuffer[pixelStartIndex + 2] = b;
 			}
 		}
 	}
@@ -148,7 +109,7 @@ function drawTriangle(vertex1, vertex2, vertex3)
 				}
 				console.log(varyings);
 				var color = renderState.pixelShader(varyings);
-				drawPixel(x, y, color[0], color[1], color[2]);
+				drawPixel(x, y, varyings[0][2], color[0], color[1], color[2]);
 			}
 		}
 }
@@ -192,14 +153,15 @@ function draw(format, vertexBuffer)
 function drawScene(deltaTime)
 {
 	clearFramebuffer();
+	clearDepthbuffer();
 	renderState.vertexShader = vertexShader;
 	renderState.pixelShader = pixelShader;
 	renderState.viewportMatrix = mat4.viewport(width, height, 0, 1);
-	/*var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
+	var rotationMatrix = mat4.fromRotationY(0.3 * totalTime);
 	renderState.worldMatrix = rotationMatrix;
 	renderState.viewMatrix = mat4.lookAt(vec4.fromValues(3, 2, 3, 1), vec4.fromValues(0, 0, 0, 1), vec4.fromValues(0, 1, 0, 0));
-	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);*/
-	draw(modelTriangle.format, modelTriangle.vertices);
+	renderState.projectionMatrix = mat4.perspective(Math.PI / 2, width / height, 1, 100);
+	draw(modelCube.format, modelCube.vertices);
 }
 
 function render(deltaTime)
@@ -215,9 +177,9 @@ function render(deltaTime)
 			for(var j = 0; j < width; ++j)
 			{
 				var pixelStartIndex = i * width * 4 + j * 4;
-				r = Math.floor(255 * framebuffer[pixelStartIndex]);
-				g = Math.floor(255 * framebuffer[pixelStartIndex + 1]);
-				b = Math.floor(255 * framebuffer[pixelStartIndex + 2]);
+				r = Math.floor(255 * renderState.framebuffer[pixelStartIndex]);
+				g = Math.floor(255 * renderState.framebuffer[pixelStartIndex + 1]);
+				b = Math.floor(255 * renderState.framebuffer[pixelStartIndex + 2]);
 				context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
 				context.fillRect(j * debugPixelSize, i * debugPixelSize, debugPixelSize, debugPixelSize);
 			}
@@ -251,16 +213,16 @@ function render(deltaTime)
 			for(var j = 0; j < width; ++j)
 			{
 				var pixelStartIndex = i * width * 4 + j * 4;
-				data[pixelStartIndex] = 255 * framebuffer[pixelStartIndex];
-				data[pixelStartIndex + 1] = 255 * framebuffer[pixelStartIndex + 1];
-				data[pixelStartIndex + 2] = 255 * framebuffer[pixelStartIndex + 2];
+				data[pixelStartIndex] = 255 * renderState.framebuffer[pixelStartIndex];
+				data[pixelStartIndex + 1] = 255 * renderState.framebuffer[pixelStartIndex + 1];
+				data[pixelStartIndex + 2] = 255 * renderState.framebuffer[pixelStartIndex + 2];
 				data[pixelStartIndex + 3] = 255;
 			}
 		context.putImageData(imageData, 0, 0);
 	}
 }
 
-function initFramebuffer()
+function initFramebufferDepthbuffer()
 {
 	var canvas = document.getElementById("raster-canvas");
 	var canvasWidth = canvas.attributes.width.value;
@@ -275,14 +237,17 @@ function initFramebuffer()
 		width = canvasWidth;
 		height = canvasHeight;
 	}
-	framebuffer = new Float32Array(width * height * 4);
-	for(var i = 0; i < framebuffer.length; ++i)
-		framebuffer[i] = 0;
+	renderState.framebuffer = new Float32Array(width * height * 4);
+	for(var i = 0; i < renderState.framebuffer.length; ++i)
+		renderState.framebuffer[i] = 0;
+	renderState.depthbuffer = new Float32Array(width * height);
+	for(var i = 0; i < renderState.depthbuffer.length; ++i)
+		renderState.depthbuffer[i] = 0;
 }
 
 function init()
 {
-	initFramebuffer();
+	initFramebufferDepthbuffer();
 	var checkboxDebug = document.getElementById("checkbox-debug");
 	checkboxDebug.checked = debug;
 	var checkboxDebugLine = document.getElementById("checkbox-debug-line");
@@ -317,7 +282,7 @@ function toggleDebug()
 	var canvasHeight = canvas.attributes.height.value;
 	context.fillStyle = "rgb(255,255,255)";
 	context.fillRect(0, 0, canvasWidth, canvasHeight);
-	initFramebuffer();
+	initFramebufferDepthbuffer();
 }
 
 function toggleDebugLine()
