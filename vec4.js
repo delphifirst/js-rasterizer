@@ -2,12 +2,12 @@ var vec4 = {};
 
 vec4.create = function()
 {
-	return [0, 0, 0, 0];
+	return new Float32Array([0, 0, 0, 0]);
 }
 
 vec4.fromValues = function(x, y, z, w)
 {
-	return [x, y, z, w];
+	return new Float32Array([x, y, z, w]);
 }
 
 vec4.str = function(v)

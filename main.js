@@ -2,8 +2,12 @@ var debug = false;
 var debugLine = true;
 var debugPixelSize = 20;
 
-var width;
-var height;
+var width, height;
+
+var canvas;
+var canvasWidth, canvasHeight;
+var canvasContext;
+var canvasImageData;
 
 var totalTime = 0;
 
@@ -12,7 +16,11 @@ var renderState = {
 	depthbuffer: undefined,
 	vertexShader: undefined,
 	pixelShader: undefined,
-	textureData: undefined,
+	textureData: {
+		width: 0,
+		height: 0,
+		data: null,
+	},
 	viewportMatrix: mat4.identity(),
 	projectionMatrix: mat4.identity(),
 	viewMatrix: mat4.identity(),
@@ -90,8 +98,10 @@ function drawTriangle(vertex1, vertex2, vertex3)
 			+ v3h[0] * v1h[1] - v1h[0] * v3h[1];
 	}
 
-	for(var y = Math.floor(minY); y <= Math.ceil(maxY); ++y)
-		for(var x = Math.floor(minX); x <= Math.ceil(maxX); ++x)
+	var startY = Math.floor(minY), startX = Math.floor(minX);
+	var endY = Math.ceil(maxY), endX = Math.ceil(maxX);
+	for(var y = startY; y <= endY; ++y)
+		for(var x = startX; x <= endX; ++x)
 		{
 			var alpha = f23(x, y) / f23(v1h[0], v1h[1]);
 			var beta = f31(x, y) / f31(v2h[0], v2h[1]);
@@ -171,9 +181,6 @@ function render(deltaTime)
 {
 	drawScene(deltaTime);
 
-	var canvas = document.getElementById("raster-canvas");
-	var context = canvas.getContext("2d");
-
 	if(debug)
 	{
 		for(var i = 0; i < height; ++i)
@@ -183,53 +190,49 @@ function render(deltaTime)
 				r = Math.floor(255 * renderState.framebuffer[pixelStartIndex]);
 				g = Math.floor(255 * renderState.framebuffer[pixelStartIndex + 1]);
 				b = Math.floor(255 * renderState.framebuffer[pixelStartIndex + 2]);
-				context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-				context.fillRect(j * debugPixelSize, i * debugPixelSize, debugPixelSize, debugPixelSize);
+				canvasContext.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+				canvasContext.fillRect(j * debugPixelSize, i * debugPixelSize, debugPixelSize, debugPixelSize);
 			}
 
 		if(debugLine)
 		{
-			context.beginPath();
-			context.lineWidth = 2;
-			context.strokeStyle = "rgb(0, 128, 255)";
+			canvasContext.beginPath();
+			canvasContext.lineWidth = 2;
+			canvasContext.strokeStyle = "rgb(0, 128, 255)";
 			for(var i = 0; i <= height; ++i)
 			{
-				context.moveTo(0, i * debugPixelSize);
-				context.lineTo(width * debugPixelSize, i * debugPixelSize);
+				canvasContext.moveTo(0, i * debugPixelSize);
+				canvasContext.lineTo(width * debugPixelSize, i * debugPixelSize);
 			}
 			for(var i = 0; i <= width; ++i)
 			{
-				context.moveTo(i * debugPixelSize, 0);
-				context.lineTo(i * debugPixelSize, height * debugPixelSize);
+				canvasContext.moveTo(i * debugPixelSize, 0);
+				canvasContext.lineTo(i * debugPixelSize, height * debugPixelSize);
 			}
-			context.stroke();
+			canvasContext.stroke();
 		}
 	}
 	else
 	{
-		var canvasWidth = canvas.attributes.width.value;
-		var canvasHeight = canvas.attributes.height.value;
-		var imageData = context.getImageData(0, 0, canvasWidth, canvasHeight);
-		var data = imageData.data;
+		var data = canvasImageData.data;
 
-		for(var i = 0; i < height; ++i)
-			for(var j = 0; j < width; ++j)
-			{
-				var pixelStartIndex = i * width * 4 + j * 4;
-				data[pixelStartIndex] = 255 * renderState.framebuffer[pixelStartIndex];
-				data[pixelStartIndex + 1] = 255 * renderState.framebuffer[pixelStartIndex + 1];
-				data[pixelStartIndex + 2] = 255 * renderState.framebuffer[pixelStartIndex + 2];
-				data[pixelStartIndex + 3] = 255;
-			}
-		context.putImageData(imageData, 0, 0);
+		for(var pixelIndex = 0; pixelIndex < data.length;)
+		{
+			data[pixelIndex] = 255 * renderState.framebuffer[pixelIndex];
+			++pixelIndex;
+			data[pixelIndex] = 255 * renderState.framebuffer[pixelIndex];
+			++pixelIndex;
+			data[pixelIndex] = 255 * renderState.framebuffer[pixelIndex];
+			++pixelIndex;
+			data[pixelIndex] = 255;
+			++pixelIndex;
+		}
+		canvasContext.putImageData(canvasImageData, 0, 0);
 	}
 }
 
 function initFramebufferDepthbuffer()
 {
-	var canvas = document.getElementById("raster-canvas");
-	var canvasWidth = canvas.attributes.width.value;
-	var canvasHeight = canvas.attributes.height.value;
 	if(debug)
 	{
 		width = Math.floor(canvasWidth / debugPixelSize);
@@ -251,14 +254,26 @@ function initFramebufferDepthbuffer()
 function changeTexture(textureName)
 {
 	var img = document.getElementById(textureName);
-	var canvas = document.getElementById("texture-canvas");
-	var context = canvas.getContext("2d");
+	var textureCanvas = document.getElementById("texture-canvas");
+	var context = textureCanvas.getContext("2d");
 	context.drawImage(img, 0, 0);
-	renderState.textureData = context.getImageData(0, 0, canvas.attributes.width.value, canvas.attributes.height.value);
+	var textureImageData = context.getImageData(0, 0,
+		textureCanvas.attributes.width.value, textureCanvas.attributes.height.value);
+	renderState.textureData.width = textureImageData.width;
+	renderState.textureData.height = textureImageData.height;
+	renderState.textureData.data = new Float32Array(textureImageData.data.length);
+	for(var i = 0; i < textureImageData.data.length; ++i)
+		renderState.textureData.data[i] = textureImageData.data[i] / 255;
 }
 
 function init()
 {
+	canvas = document.getElementById("raster-canvas");
+	canvasWidth = canvas.attributes.width.value;
+	canvasHeight = canvas.attributes.height.value;
+	canvasContext = canvas.getContext("2d");
+	canvasImageData = canvasContext.createImageData(canvasWidth, canvasHeight);
+
 	initFramebufferDepthbuffer();
 	changeTexture("texture-madoka");
 	var checkboxDebug = document.getElementById("checkbox-debug");
@@ -289,12 +304,8 @@ function toggleDebug()
 {
 	var checkboxDebug = document.getElementById("checkbox-debug");
 	debug = checkboxDebug.checked;
-	var canvas = document.getElementById("raster-canvas");
-	var context = canvas.getContext("2d");
-	var canvasWidth = canvas.attributes.width.value;
-	var canvasHeight = canvas.attributes.height.value;
-	context.fillStyle = "rgb(255,255,255)";
-	context.fillRect(0, 0, canvasWidth, canvasHeight);
+	canvasContext.fillStyle = "rgb(255,255,255)";
+	canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
 	initFramebufferDepthbuffer();
 }
 

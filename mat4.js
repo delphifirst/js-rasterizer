@@ -2,18 +2,18 @@ mat4 = {}
 
 mat4.create = function()
 {
-	return [0, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 0, 0];
+	return new Float32Array([0, 0, 0, 0,
+							0, 0, 0, 0,
+							0, 0, 0, 0,
+							0, 0, 0, 0]);
 }
 
 mat4.fromCols = function(v1, v2, v3, v4)
 {
-	return [v1[0], v2[0], v3[0], v4[0],
-			v1[1], v2[1], v3[1], v4[1],
-			v1[2], v2[2], v3[2], v4[2],
-			v1[3], v2[3], v3[3], v4[3]];
+	return new Float32Array([v1[0], v2[0], v3[0], v4[0],
+							v1[1], v2[1], v3[1], v4[1],
+							v1[2], v2[2], v3[2], v4[2],
+							v1[3], v2[3], v3[3], v4[3]]);
 }
 
 mat4.fromRows = function(v1, v2, v3, v4)
@@ -23,42 +23,42 @@ mat4.fromRows = function(v1, v2, v3, v4)
 
 mat4.fromScale = function(scale)
 {
-	return [scale, 0, 0, 0,
-			0, scale, 0, 0,
-			0, 0, scale, 0,
-			0, 0, 0, 1];
+	return new Float32Array([scale, 0, 0, 0,
+							0, scale, 0, 0,
+							0, 0, scale, 0,
+							0, 0, 0, 1]);
 }
 
 mat4.fromTranslation = function(v)
 {
-	return [1, 0, 0, v[0],
-			0, 1, 0, v[1],
-			0, 0, 1, v[2],
-			0, 0, 0, 1];
+	return new Float32Array([1, 0, 0, v[0],
+							0, 1, 0, v[1],
+							0, 0, 1, v[2],
+							0, 0, 0, 1]);
 }
 
 mat4.fromRotationX = function(angle)
 {
-	return [1, 0, 0, 0,
-			0, Math.cos(angle), -Math.sin(angle), 0,
-			0, Math.sin(angle), Math.cos(angle), 0,
-			0, 0, 0, 1];
+	return new Float32Array([1, 0, 0, 0,
+							0, Math.cos(angle), -Math.sin(angle), 0,
+							0, Math.sin(angle), Math.cos(angle), 0,
+							0, 0, 0, 1]);
 }
 
 mat4.fromRotationY = function(angle)
 {
-	return [Math.cos(angle), 0, Math.sin(angle), 0,
-			0, 1, 0, 0,
-			-Math.sin(angle), 0, Math.cos(angle), 0,
-			0, 0, 0, 1];
+	return new Float32Array([Math.cos(angle), 0, Math.sin(angle), 0,
+							0, 1, 0, 0,
+							-Math.sin(angle), 0, Math.cos(angle), 0,
+							0, 0, 0, 1]);
 }
 
 mat4.fromRotationZ = function(angle)
 {
-	return [Math.cos(angle), -Math.sin(angle), 0, 0,
-			Math.sin(angle), Math.cos(angle), 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1];
+	return new Float32Array([Math.cos(angle), -Math.sin(angle), 0, 0,
+							Math.sin(angle), Math.cos(angle), 0, 0,
+							0, 0, 1, 0,
+							0, 0, 0, 1]);
 }
 
 mat4.lookAt = function(eye, center, up)
@@ -71,27 +71,27 @@ mat4.lookAt = function(eye, center, up)
 
 mat4.identity = function()
 {
-	return [1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1];
+	return new Float32Array([1, 0, 0, 0,
+							0, 1, 0, 0,
+							0, 0, 1, 0,
+							0, 0, 0, 1]);
 }
 
 mat4.viewport = function(nx, ny, near, far)
 {
-	return [nx / 2, 0, 0, (nx - 1) / 2,
-			0, ny / 2, 0, (ny - 1) / 2,
-			0, 0, (far - near) / 2, (far + near) / 2,
-			0, 0, 0, 1];
+	return new Float32Array([nx / 2, 0, 0, (nx - 1) / 2,
+							0, ny / 2, 0, (ny - 1) / 2,
+							0, 0, (far - near) / 2, (far + near) / 2,
+							0, 0, 0, 1]);
 }
 
 mat4.perspective = function(fovy, aspect, near, far)
 {
 	var f = 1.0 / Math.tan(fovy / 2), nf = 1 / (near - far);
-	return [f / aspect, 0, 0, 0,
-			0, f, 0, 0,
-			0, 0, (far + near) * nf, (2 * far * near) * nf,
-			0, 0, -1, 0];
+	return new Float32Array([f / aspect, 0, 0, 0,
+							0, f, 0, 0,
+							0, 0, (far + near) * nf, (2 * far * near) * nf,
+							0, 0, -1, 0]);
 }
 
 mat4.str = function(m)
@@ -134,10 +134,10 @@ mat4.set = function(m, row, col, val)
 
 mat4.transposed = function(m)
 {
-	return [m[0], m[4], m[8], m[12],
-			m[1], m[5], m[9], m[13],
-			m[2], m[6], m[10], m[14],
-			m[3], m[7], m[11], m[15]];
+	return new Float32Array([m[0], m[4], m[8], m[12],
+							m[1], m[5], m[9], m[13],
+							m[2], m[6], m[10], m[14],
+							m[3], m[7], m[11], m[15]]);
 }
 
 mat4.neg = function(m)

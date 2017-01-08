@@ -18,12 +18,11 @@ function texture2D(textureData, u, v)
 	var i = Math.floor(textureData.height * v) % textureData.height;
 	var j = Math.floor(textureData.width * u) % textureData.width;
 	var pixelIndex = i * textureData.width * 4 + j * 4;
-	return vec4.fromValues(textureData.data[pixelIndex] / 255, textureData.data[pixelIndex + 1] / 255, textureData.data[pixelIndex + 2] / 255, 1);
+	return textureData.data.slice(pixelIndex, pixelIndex + 4);
 }
 
 function pixelShader(varyings)
 {
-	var color = varyings[1];
 	var uv = varyings[2];
 	var diffuse = texture2D(this.textureData, uv[0], uv[1]);
 	return diffuse;
