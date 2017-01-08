@@ -1,6 +1,7 @@
 var debug = false;
 var debugLine = true;
 var debugPixelSize = 20;
+
 var width;
 var height;
 
@@ -64,53 +65,64 @@ function drawPixel(x, y, z, r, g, b)
 
 function drawTriangle(vertex1, vertex2, vertex3)
 {
-	var minX = Math.min(vertex1[0][0], vertex2[0][0], vertex3[0][0]);
-	var maxX = Math.max(vertex1[0][0], vertex2[0][0], vertex3[0][0]);
-	var minY = Math.min(vertex1[0][1], vertex2[0][1], vertex3[0][1]);
-	var maxY = Math.max(vertex1[0][1], vertex2[0][1], vertex3[0][1]);
+	// The first element in each vertex is always position
+	// Here the vertex position is homogenized
+	var w1 = vertex1[0][3], w2 = vertex2[0][3], w3 = vertex3[0][3];
+	var v1h = vec4.scale(1 / w1, vertex1[0]);
+	var v2h = vec4.scale(1 / w2, vertex2[0]);
+	var v3h = vec4.scale(1 / w3, vertex3[0]);
+
+	var minX = Math.min(v1h[0], v2h[0], v3h[0]);
+	var maxX = Math.max(v1h[0], v2h[0], v3h[0]);
+	var minY = Math.min(v1h[1], v2h[1], v3h[1]);
+	var maxY = Math.max(v1h[1], v2h[1], v3h[1]);
+
+	var varyingCount = vertex1.length;
 
 	function f12(x, y)
 	{
-		return (vertex1[0][1] - vertex2[0][1]) * x
-			+ (vertex2[0][0] - vertex1[0][0]) * y
-			+ vertex1[0][0] * vertex2[0][1] - vertex2[0][0] * vertex1[0][1];
+		return (v1h[1] - v2h[1]) * x
+			+ (v2h[0] - v1h[0]) * y
+			+ v1h[0] * v2h[1] - v2h[0] * v1h[1];
 	}
 
 	function f23(x, y)
 	{
-		return (vertex2[0][1] - vertex3[0][1]) * x
-			+ (vertex3[0][0] - vertex2[0][0]) * y
-			+ vertex2[0][0] * vertex3[0][1] - vertex3[0][0] * vertex2[0][1];
+		return (v2h[1] - v3h[1]) * x
+			+ (v3h[0] - v2h[0]) * y
+			+ v2h[0] * v3h[1] - v3h[0] * v2h[1];
 	}
 
 	function f31(x, y)
 	{
-		return (vertex3[0][1] - vertex1[0][1]) * x
-			+ (vertex1[0][0] - vertex3[0][0]) * y
-			+ vertex3[0][0] * vertex1[0][1] - vertex1[0][0] * vertex3[0][1];
+		return (v3h[1] - v1h[1]) * x
+			+ (v1h[0] - v3h[0]) * y
+			+ v3h[0] * v1h[1] - v1h[0] * v3h[1];
 	}
 
 	for(var y = Math.floor(minY); y <= Math.ceil(maxY); ++y)
 		for(var x = Math.floor(minX); x <= Math.ceil(maxX); ++x)
 		{
-			var alpha = f23(x, y) / f23(vertex1[0][0], vertex1[0][1]);
-			var beta = f31(x, y) / f31(vertex2[0][0], vertex2[0][1]);
-			var gamma = f12(x, y) / f12(vertex3[0][0], vertex3[0][1]);
+			var alpha = f23(x, y) / f23(v1h[0], v1h[1]);
+			var beta = f31(x, y) / f31(v2h[0], v2h[1]);
+			var gamma = f12(x, y) / f12(v3h[0], v3h[1]);
 
 			if(alpha > 0 && beta > 0 && gamma > 0)
 			{
-				var varyings = new Array(vertex1.length);
-				for(var varyingIndex = 0; varyingIndex < varyings.length; ++varyingIndex)
+				// Interpolate attributes
+				var oneOverW = alpha / w1 + beta / w2 + gamma / w3;
+				var varyings = new Array(varyingCount);
+				for(var varyingIndex = 0; varyingIndex < varyingCount; ++varyingIndex)
 				{
-					varyings[varyingIndex] = vec4.add(
-						vec4.scale(alpha, vertex1[varyingIndex]),
-						vec4.add(vec4.scale(beta, vertex2[varyingIndex]),
-							vec4.scale(gamma, vertex3[varyingIndex]))
-						);
+					varyings[varyingIndex] = vec4.scale(1 / oneOverW, vec4.add(
+						vec4.scale(alpha / w1, vertex1[varyingIndex]),
+						vec4.add(vec4.scale(beta / w2, vertex2[varyingIndex]),
+							vec4.scale(gamma / w3, vertex3[varyingIndex]))
+						));
 				}
-				console.log(varyings);
+
 				var color = renderState.pixelShader(varyings);
-				drawPixel(x, y, varyings[0][2], color[0], color[1], color[2]);
+				drawPixel(x, y, varyings[0][2] / varyings[0][3], color[0], color[1], color[2]);
 			}
 		}
 }
@@ -144,9 +156,7 @@ function draw(format, vertexBuffer)
 		var v1 = processedVertexBuffer[3 * triangleIndex];
 		var v2 = processedVertexBuffer[3 * triangleIndex + 1];
 		var v3 = processedVertexBuffer[3 * triangleIndex + 2];
-		v1[0] = vec4.scale(1 / v1[0][3], v1[0]);
-		v2[0] = vec4.scale(1 / v2[0][3], v2[0]);
-		v3[0] = vec4.scale(1 / v3[0][3], v3[0]);
+
 		drawTriangle(v1, v2, v3);
 	}
 }
