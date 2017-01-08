@@ -21,24 +21,14 @@ var renderState = {
 
 function clearFramebuffer()
 {
-	for(var i = 0; i < height; ++i)
-		for(var j = 0; j < width; ++j)
-		{
-			var pixelStartIndex = i * width * 4 + j * 4;
-			renderState.framebuffer[pixelStartIndex] = 0;
-			renderState.framebuffer[pixelStartIndex + 1] = 0;
-			renderState.framebuffer[pixelStartIndex + 2] = 0;
-		}
+	for(var i = 0; i < height * width * 4; ++i)
+		renderState.framebuffer[i] = 0;
 }
 
 function clearDepthbuffer()
 {
-	for(var i = 0; i < height; ++i)
-		for(var j = 0; j < width; ++j)
-		{
-			var pixelIndex = i * width + j;
-			renderState.depthbuffer[pixelIndex] = 1;
-		}
+	for(var i = 0; i < height * width; ++i)
+		renderState.depthbuffer[i] = 1;
 }
 
 function drawPixel(x, y, z, r, g, b)
