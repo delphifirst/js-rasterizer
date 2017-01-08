@@ -15,17 +15,23 @@
 			A software 3D rasterizer written in JavaScript.
 			You can browse the source code at <a href="https://github.com/delphifirst/js-rasterizer">source code</a>.
 		</p>
-		<canvas id="raster-canvas" width="400" height="400">
+		<canvas id="raster-canvas" style="margin: 20px" width="400" height="400">
 			Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
 		</canvas>
 		<form>
-			<span id="label-fps">FPS: 0</span>
+			<span id="label-fps">FPS: 0</span> <br/>
+			<span>Texture: </span>
+			<select name="textures" onchange="changeTexture(this.value)">
+				<option value="texture-madoka">Madoka</option>
+				<option value="texture-checkerboard">Checkerboard</option>
+			</select>
 			<input type="checkbox" id="checkbox-debug" onclick="toggleDebug()"/> Debug Mode
-			<input type="checkbox" id="checkbox-debug-line" onclick="toggleDebugLine()"/> Debug Line
+			<input type="checkbox" id="checkbox-debug-line" onclick="toggleDebugLine()"/> Debug Line <br/>
+			<img id="texture-madoka" width="0" height="0" src="./madoka.png" alt="Texture used for testing"/>
+			<img id="texture-checkerboard" width="0" height="0" src="./checkerboard.png" alt="Texture used for testing"/>
+			<canvas id="texture-canvas" style="margin: 20px" width="256" height="256">
+				Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
+			</canvas>
 		</form>
-		<img id="texture" width="0" height="0" src="./texture.png" alt="Texture used for testing"/>
-		<canvas id="texture-canvas" width="256" height="256">
-			Your browser doesn't appear to support the <code>&lt;canvas&gt;</code> element.
-		</canvas>
 	</body>
 </html>

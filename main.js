@@ -258,9 +258,9 @@ function initFramebufferDepthbuffer()
 		renderState.depthbuffer[i] = 0;
 }
 
-function initTexture()
+function changeTexture(textureName)
 {
-	var img = document.getElementById("texture");
+	var img = document.getElementById(textureName);
 	var canvas = document.getElementById("texture-canvas");
 	var context = canvas.getContext("2d");
 	context.drawImage(img, 0, 0);
@@ -270,7 +270,7 @@ function initTexture()
 function init()
 {
 	initFramebufferDepthbuffer();
-	initTexture();
+	changeTexture("texture-madoka");
 	var checkboxDebug = document.getElementById("checkbox-debug");
 	checkboxDebug.checked = debug;
 	var checkboxDebugLine = document.getElementById("checkbox-debug-line");
