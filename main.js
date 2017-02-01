@@ -61,14 +61,25 @@ function drawPixel(x, y, z, r, g, b)
 	}
 }
 
+function isBackFace(v1, v2, v3)
+{
+	var p = vec4.sub(v2, v1);
+	var q = vec4.sub(v3, v1);
+	return vec4.cross(p, q)[2] < 0; 
+}
+
 function drawTriangle(vertex1, vertex2, vertex3)
 {
 	// The first element in each vertex is always position
 	// Here the vertex position is homogenized
 	var w1 = vertex1[0][3], w2 = vertex2[0][3], w3 = vertex3[0][3];
+
 	var v1h = vec4.scale(1 / w1, vertex1[0]);
 	var v2h = vec4.scale(1 / w2, vertex2[0]);
 	var v3h = vec4.scale(1 / w3, vertex3[0]);
+
+	if(isBackFace(v1h, v2h, v3h))
+		return;
 
 	var minX = Math.min(v1h[0], v2h[0], v3h[0]);
 	var maxX = Math.max(v1h[0], v2h[0], v3h[0]);
